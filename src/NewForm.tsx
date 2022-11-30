@@ -1,25 +1,30 @@
-import React, {useRef, useState} from 'react'
+import React, { useRef, useState, FormEvent } from 'react'
 import CreatableReactSelect from 'react-select/creatable'
 
-import {Link} from 'react-router-dom'
-import { Form, Row, Col, Stack, Button } from 'react-bootstrap'
+import { Link, useNavigate } from 'react-router-dom'
+import { Form, Row, Col, Stack, Button, Tab } from 'react-bootstrap'
 import { NoteData, Tag } from './App'
+import { v4 as uuidV4 } from 'uuid'
 
 type NoteFormProps = {
     onSubmit: (data: NoteData) => void
+    onAddTag: (tag: Tag) => void
+    availableTags: Tag[]
 }
-export default function NewForm({onSubmit}: NoteFormProps){
+export default function NewForm({ onSubmit, onAddTag, availableTags }: NoteFormProps) {
     const titleRef = useRef<HTMLInputElement>(null);
     const markdownRef = useRef<HTMLTextAreaElement>(null);
-const [selectedTags, setselectedTags] = useState<Tag[]>([])
+    const [selectedTags, setselectedTags] = useState<Tag[]>([])
+    const navigate = useNavigate();
 
-    function handleSubmit (e: FormEvent) {
-e.preventDefault();
-onSubmit({
-    title: titleRef.current!.value,
-    markdown: markdownRef.current!.value,
-    tags: []
-})
+    function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        onSubmit({
+            title: titleRef.current!.value,
+            markdown: markdownRef.current!.value,
+            tags: selectedTags
+        })
+        navigate("..")
     }
 
     return (
@@ -36,28 +41,36 @@ onSubmit({
                         <Form.Group controlId='tags'>
                             <Form.Label>Tags</Form.Label>
                             <CreatableReactSelect isMulti value={selectedTags.map(tag => {
-                                return {label: tag.label, value: tag.id}
-                            })} 
-                            onChange={tags => {
-                                setselectedTags(tags.map(tag => {
-                                    return {label: tag.label, id: tag.value}
-                                }))
-                                }}    />
+                                return { label: tag.label, value: tag.id }
+                            })}
+                                onCreateOption={label => {
+                                    const newTag = { id: uuidV4(), label };
+                                    onAddTag(newTag);
+                                    setselectedTags(prev => [...prev, newTag])
+                                }}
+                                options={availableTags.map(tag => {
+                                    return { label: tag.label, value: tag.id }
+                                })}
+                                onChange={tags => {
+                                    setselectedTags(tags.map(tag => {
+                                        return { label: tag.label, id: tag.value }
+                                    }))
+                                }} />
                         </Form.Group>
                     </Col>
                 </Row>
-                    <Col>
-                        <Form.Group controlId='markdown'>
-                            <Form.Label>Body</Form.Label>
-                            <Form.Control ref={markdownRef} required as="textarea" rows={15} />
-                        </Form.Group>
-                    </Col>
-                    <Stack direction="horizontal" gap={2} className="justify-content-end">
-                        <Button type="submit" variant="primary">Save</Button>
-                        <Link  to=".." >
+                <Col>
+                    <Form.Group controlId='markdown'>
+                        <Form.Label>Body</Form.Label>
+                        <Form.Control ref={markdownRef} required as="textarea" rows={15} />
+                    </Form.Group>
+                </Col>
+                <Stack direction="horizontal" gap={2} className="justify-content-end">
+                    <Button type="submit" variant="primary">Save</Button>
+                    <Link to=".." >
                         <Button type="button" variant="outline-secondary">Cancel</Button>
-                        </Link>
-                    </Stack>
+                    </Link>
+                </Stack>
             </Stack>
         </Form>
     )
